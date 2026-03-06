@@ -695,14 +695,11 @@
 
       <div class="card">
         <div class="card-label">Testo da riassumere</div>
-        <div class="upload-zone" onclick="document.getElementById('rias-file').click()" id="rias-dropzone">
+        <div class="upload-zone" id="rias-dropzone" onclick="document.getElementById('rias-file').click()">
           <div class="upload-icon">📎</div>
-          <div class="upload-text">
-            <strong>Carica un file</strong>
-            PDF, Word (.docx), TXT oppure foto degli appunti
-          </div>
+          <div class="upload-text"><strong>Carica uno o più file</strong> PDF, Word (.docx), TXT, immagini</div>
           <span class="upload-badge" id="rias-file-name">Sfoglia</span>
-          <input type="file" id="rias-file" accept=".pdf,.txt,.docx,image/*" onchange="handleFileUpload('rias-file','rias-input','rias-file-name')">
+          <input type="file" id="rias-file" accept=".pdf,.txt,.docx,image/*" multiple onchange="handleMultiFileUpload('rias-file','rias-input','rias-file-name')">
         </div>
         <textarea id="rias-input" placeholder="Oppure incolla qui il testo che vuoi riassumere..."></textarea>
 
@@ -748,7 +745,7 @@
               PDF, Word, TXT o foto degli appunti
             </div>
             <span class="upload-badge" id="app-file-name">Sfoglia</span>
-            <input type="file" id="app-file" accept=".pdf,.txt,.docx,image/*" onchange="handleFileUpload('app-file','app-input','app-file-name')">
+            <input type="file" id="app-file" accept=".pdf,.txt,.docx,image/*" multiple onchange="handleMultiFileUpload('app-file','app-input','app-file-name')">
           </div>
           <textarea id="app-input" placeholder="Oppure scrivi/incolla i tuoi appunti..."></textarea>
           <div class="options-row" style="margin-top:14px">
@@ -789,7 +786,7 @@
             PDF, Word, TXT o foto degli appunti
           </div>
           <span class="upload-badge" id="pod-file-name">Sfoglia</span>
-          <input type="file" id="pod-file" accept=".pdf,.txt,.docx,image/*" onchange="handleFileUpload('pod-file','pod-input','pod-file-name')">
+          <input type="file" id="pod-file" accept=".pdf,.txt,.docx,image/*" multiple onchange="handleMultiFileUpload('pod-file','pod-input','pod-file-name')">
         </div>
         <textarea id="pod-input" placeholder="Oppure scrivi un argomento o incolla un testo..."></textarea>
         <div class="options-row" style="margin-top:14px">
@@ -840,7 +837,7 @@
             PDF, Word, TXT o foto degli appunti
           </div>
           <span class="upload-badge" id="sch-file-name">Sfoglia</span>
-          <input type="file" id="sch-file" accept=".pdf,.txt,.docx,image/*" onchange="handleFileUpload('sch-file','sch-input','sch-file-name')">
+          <input type="file" id="sch-file" accept=".pdf,.txt,.docx,image/*" multiple onchange="handleMultiFileUpload('sch-file','sch-input','sch-file-name')">
         </div>
         <textarea id="sch-input" placeholder="Oppure scrivi un argomento o incolla un testo..."></textarea>
         <div class="options-row" style="margin-top:14px">
@@ -876,7 +873,7 @@
             PDF, Word, TXT o foto degli appunti
           </div>
           <span class="upload-badge" id="quiz-file-name">Sfoglia</span>
-          <input type="file" id="quiz-file" accept=".pdf,.txt,.docx,image/*" onchange="handleFileUpload('quiz-file','quiz-input','quiz-file-name')">
+          <input type="file" id="quiz-file" accept=".pdf,.txt,.docx,image/*" multiple onchange="handleMultiFileUpload('quiz-file','quiz-input','quiz-file-name')">
         </div>
         <textarea id="quiz-input" placeholder="Oppure scrivi un argomento o incolla un testo... es. La Prima Guerra Mondiale"></textarea>
         <div class="options-row" style="margin-top:14px">
@@ -926,7 +923,9 @@
         </div>
         <div class="toolbar">
           <button class="btn btn-primary" id="ric-btn" onclick="generateRicerca()">🔍 Avvia ricerca</button>
-          <button class="btn btn-secondary" onclick="exportRicercaDoc()" id="ric-export-btn" style="display:none">📄 Scarica .docx</button>
+          <button class="btn btn-secondary" onclick="exportRicercaDoc()" id="ric-export-doc" style="display:none">📄 Word</button>
+          <button class="btn btn-secondary" onclick="exportRicercaPdf()" id="ric-export-pdf" style="display:none">📑 PDF</button>
+          <button class="btn btn-secondary" onclick="resetRicerca()" id="ric-reset-btn" style="display:none">🔄 Nuova ricerca</button>
         </div>
       </div>
 
@@ -957,7 +956,7 @@
             PDF, Word, TXT — il contenuto verrà usato come base per il documento
           </div>
           <span class="upload-badge" id="doc-file-name">Sfoglia</span>
-          <input type="file" id="doc-file" accept=".pdf,.txt,.docx,image/*" onchange="handleFileUpload('doc-file','doc-input','doc-file-name')">
+          <input type="file" id="doc-file" accept=".pdf,.txt,.docx,image/*" multiple onchange="handleMultiFileUpload('doc-file','doc-input','doc-file-name')">
         </div>
         <textarea id="doc-input" placeholder="Oppure descrivi il documento: es. Scrivi una relazione su Alessandro Magno..."></textarea>
         <div class="options-row" style="margin-top:14px">
@@ -967,7 +966,10 @@
           <div class="option-chip" onclick="selectChip(this,'doc-tone')">Semplice</div>
         </div>
         <div class="toolbar">
-          <button class="btn btn-primary" id="doc-btn" onclick="generateDocumento()">📝 Genera e scarica</button>
+          <button class="btn btn-primary" id="doc-btn" onclick="generateDocumento()">📝 Genera documento</button>
+          <button class="btn btn-secondary" id="doc-export-doc" style="display:none" onclick="exportDocWord()">📄 Word</button>
+          <button class="btn btn-secondary" id="doc-export-pdf" style="display:none" onclick="exportDocPdf()">📑 PDF</button>
+          <button class="btn btn-secondary" id="doc-reset-btn" style="display:none" onclick="resetDocumento()">🔄 Nuovo documento</button>
         </div>
       </div>
 
@@ -1477,7 +1479,7 @@ ARGOMENTO: ${text}`
     const len = getSelected('ric-len') || 'Media';
     const lenMap = { 'Breve': '300-400 parole', 'Media': '600-800 parole', 'Approfondita': '1000-1200 parole' };
     setLoading('ric-btn', true);
-    document.getElementById('ric-export-btn').style.display = 'none';
+    ['ric-export-doc','ric-export-pdf','ric-reset-btn'].forEach(id => document.getElementById(id).style.display = 'none');
     const out = document.getElementById('ric-output');
     out.textContent = '';
     out.classList.add('visible');
@@ -1487,7 +1489,7 @@ ARGOMENTO: ${text}`
       );
       lastRicercaText = result.trim();
       out.textContent = lastRicercaText;
-      document.getElementById('ric-export-btn').style.display = 'inline-flex';
+      ['ric-export-doc','ric-export-pdf','ric-reset-btn'].forEach(id => document.getElementById(id).style.display = 'inline-flex');
     } catch(e) {
       out.textContent = 'Errore nella generazione. Riprova.';
     }
@@ -1498,6 +1500,21 @@ ARGOMENTO: ${text}`
     if (!lastRicercaText) return;
     const tema = document.getElementById('ric-input').value.trim() || 'Ricerca';
     buildAndDownloadDocx(tema, lastRicercaText);
+  }
+
+  async function exportRicercaPdf() {
+    if (!lastRicercaText) return;
+    const tema = document.getElementById('ric-input').value.trim() || 'Ricerca';
+    buildAndDownloadPdf(tema, lastRicercaText);
+  }
+
+  function resetRicerca() {
+    document.getElementById('ric-input').value = '';
+    document.getElementById('ric-output').textContent = '';
+    document.getElementById('ric-output').classList.remove('visible');
+    ['ric-export-doc','ric-export-pdf','ric-reset-btn'].forEach(id => document.getElementById(id).style.display = 'none');
+    lastRicercaText = '';
+    document.getElementById('ric-input').focus();
   }
 
   // ── DOCUMENTO ────────────────────────────────────────────────
@@ -1515,17 +1532,36 @@ ARGOMENTO: ${text}`
       const result = await callClaude(
         `Sei un assistente scolastico italiano. Scrivi un documento di tipo "${tipo}" con tono ${tonoMap[tono]} basato su queste istruzioni:\n${istruzioni}\n\nStruttura il documento con titolo, sezioni chiare e conclusione. Rispondi SOLO con il testo del documento.`
       );
-      const content = result.trim();
-      // Extract title from first line
-      const lines = content.split('\n');
-      const title = lines[0].replace(/^#+\s*/, '').trim() || tipo;
-      status.textContent = '⬇️ Preparazione file Word...';
-      await buildAndDownloadDocx(title, content);
-      status.textContent = '✅ Documento scaricato! Aprilo con Microsoft Word o LibreOffice.';
+      lastDocContent = result.trim();
+      lastDocTitle = lastDocContent.split('\n')[0].replace(/^#+\s*/,'').trim() || tipo;
+      status.textContent = '✅ Documento pronto! Scaricalo in Word o PDF.';
+      status.innerHTML = `<div style="white-space:pre-wrap;line-height:1.8">${lastDocContent}</div>`;
+      ['doc-export-doc','doc-export-pdf','doc-reset-btn'].forEach(id => document.getElementById(id).style.display = 'inline-flex');
     } catch(e) {
       status.textContent = '❌ Errore nella generazione. Riprova.';
     }
     setLoading('doc-btn', false);
+  }
+
+  let lastDocContent = '';
+  let lastDocTitle = '';
+
+  function exportDocWord() {
+    if (!lastDocContent) return;
+    buildAndDownloadDocx(lastDocTitle, lastDocContent);
+  }
+
+  function exportDocPdf() {
+    if (!lastDocContent) return;
+    buildAndDownloadPdf(lastDocTitle, lastDocContent);
+  }
+
+  function resetDocumento() {
+    document.getElementById('doc-input').value = '';
+    document.getElementById('doc-status').textContent = '';
+    document.getElementById('doc-status').classList.remove('visible');
+    ['doc-export-doc','doc-export-pdf','doc-reset-btn'].forEach(id => document.getElementById(id).style.display = 'none');
+    lastDocContent = ''; lastDocTitle = '';
   }
 
   // ── DOCX Builder (client-side via docx CDN) ──────────────────
@@ -1565,7 +1601,111 @@ ARGOMENTO: ${text}`
     URL.revokeObjectURL(url);
   }
 
-  function renderSchede(cards) {
+  function buildAndDownloadPdf(title, text) {
+    const lines = text.split('\n');
+    let html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>
+  @page { margin: 2cm; }
+  body { font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.7; color: #222; }
+  h1 { font-size: 20pt; color: #1a1a2e; border-bottom: 2px solid #333; padding-bottom: 6px; }
+  h2 { font-size: 15pt; color: #1a1a2e; margin-top: 18px; }
+  h3 { font-size: 13pt; color: #333; }
+  p { margin: 8px 0; text-align: justify; }
+  .title { font-size: 26pt; font-weight: bold; text-align: center; margin-bottom: 30px; }
+  .footer { margin-top: 40px; font-size: 10pt; color: #888; text-align: right; border-top: 1px solid #ddd; padding-top: 8px; }
+</style></head><body>`;
+    html += `<div class="title">${title}</div>`;
+    for (const line of lines) {
+      const t = line.trim();
+      if (!t) { html += '<br>'; continue; }
+      if (/^###\s/.test(t)) html += `<h3>${t.replace(/^###\s*/,'')}</h3>`;
+      else if (/^##\s/.test(t)) html += `<h2>${t.replace(/^##\s*/,'')}</h2>`;
+      else if (/^#\s/.test(t)) html += `<h1>${t.replace(/^#\s*/,'')}</h1>`;
+      else if (/^\d+\)\s/.test(t) && t.length < 80) html += `<h2>${t.replace(/^\d+\)\s*/,'')}</h2>`;
+      else html += `<p>${t}</p>`;
+    }
+    html += `<div class="footer">Generato con StudIA — ${new Date().toLocaleDateString('it-IT')}</div>`;
+    html += `<script>window.onload=()=>{window.print();}<\/script></body></html>`;
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+  }
+
+  // ── MULTI-FILE UPLOAD ─────────────────────────────────────────
+  async function handleMultiFileUpload(inputId, textareaId, badgeId) {
+    const files = Array.from(document.getElementById(inputId).files);
+    if (!files.length) return;
+    const badge = document.getElementById(badgeId);
+    const textarea = document.getElementById(textareaId);
+    badge.textContent = `⏳ Lettura ${files.length} file...`;
+    textarea.value = '';
+
+    const texts = [];
+    for (const file of files) {
+      try {
+        const name = file.name;
+        let extracted = '';
+
+        if (file.type.startsWith('image/')) {
+          const b64 = await fileToBase64(file);
+          textarea.placeholder = `⏳ OCR: ${name}...`;
+          extracted = await callClaudeWithContent([
+            { type: "image", source: { type: "base64", media_type: file.type, data: b64 } },
+            { type: "text", text: "Trascrivi tutto il testo visibile in questa immagine. Rispondi SOLO con il testo trascritto." }
+          ]);
+        } else if (file.type === 'text/plain' || name.endsWith('.txt')) {
+          extracted = await file.text();
+        } else if (file.type === 'application/pdf' || name.endsWith('.pdf')) {
+          // Try reading as text first (faster), fall back to AI
+          try {
+            const arrayBuffer = await file.arrayBuffer();
+            const bytes = new Uint8Array(arrayBuffer);
+            // Extract readable ASCII text from PDF bytes
+            let raw = '';
+            for (let i = 0; i < bytes.length; i++) {
+              const c = bytes[i];
+              if (c >= 32 && c <= 126) raw += String.fromCharCode(c);
+              else if (c === 10 || c === 13) raw += '\n';
+            }
+            // Clean up: keep only lines with enough readable content
+            const readableLines = raw.split('\n')
+              .map(l => l.trim())
+              .filter(l => l.length > 20 && /[a-zA-ZÀ-ÿ]{3,}/.test(l) && !l.startsWith('/') && !l.startsWith('<<'));
+            extracted = readableLines.join('\n');
+            if (extracted.length < 100) throw new Error('PDF non leggibile direttamente');
+          } catch {
+            // Fallback: send to AI as base64
+            const b64 = await fileToBase64(file);
+            textarea.placeholder = `⏳ AI legge: ${name}...`;
+            extracted = await callClaudeWithContent([
+              { type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } },
+              { type: "text", text: "Estrai e trascrivi tutto il testo di questo documento. Rispondi SOLO con il testo." }
+            ]);
+          }
+        } else if (name.endsWith('.docx')) {
+          if (!window.mammoth) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
+          const arrayBuffer = await file.arrayBuffer();
+          const result = await mammoth.extractRawText({ arrayBuffer });
+          extracted = result.value.trim();
+        }
+
+        if (extracted.trim()) {
+          texts.push(files.length > 1 ? `=== ${file.name} ===\n${extracted.trim()}` : extracted.trim());
+        }
+      } catch(e) {
+        texts.push(`[Errore lettura: ${file.name}]`);
+        console.error(e);
+      }
+    }
+
+    textarea.value = texts.join('\n\n');
+    textarea.placeholder = '';
+    badge.textContent = files.length > 1
+      ? `✅ ${files.length} file caricati`
+      : `✅ ${files[0].name.substring(0,20)}`;
+  }
+
+
     const grid = document.getElementById('sch-output');
     grid.innerHTML = '';
     cards.forEach((card, i) => {
