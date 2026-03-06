@@ -1677,32 +1677,21 @@ ARGOMENTO: ${text}`
         } else if (file.type === 'text/plain' || name.endsWith('.txt')) {
           extracted = await file.text();
         } else if (file.type === 'application/pdf' || name.endsWith('.pdf')) {
-          // Try reading as text first (faster), fall back to AI
-          try {
-            const arrayBuffer = await file.arrayBuffer();
-            const bytes = new Uint8Array(arrayBuffer);
-            // Extract readable ASCII text from PDF bytes
-            let raw = '';
-            for (let i = 0; i < bytes.length; i++) {
-              const c = bytes[i];
-              if (c >= 32 && c <= 126) raw += String.fromCharCode(c);
-              else if (c === 10 || c === 13) raw += '\n';
-            }
-            // Clean up: keep only lines with enough readable content
-            const readableLines = raw.split('\n')
-              .map(l => l.trim())
-              .filter(l => l.length > 20 && /[a-zA-ZÀ-ÿ]{3,}/.test(l) && !l.startsWith('/') && !l.startsWith('<<'));
-            extracted = readableLines.join('\n');
-            if (extracted.length < 100) throw new Error('PDF non leggibile direttamente');
-          } catch {
-            // Fallback: send to AI as base64
-            const b64 = await fileToBase64(file);
-            textarea.placeholder = `⏳ AI legge: ${name}...`;
-            extracted = await callClaudeWithContent([
-              { type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } },
-              { type: "text", text: "Estrai e trascrivi tutto il testo di questo documento. Rispondi SOLO con il testo." }
-            ]);
+          badge.textContent = `⏳ Lettura PDF...`;
+          // Use PDF.js to extract text client-side
+          if (!window.pdfjsLib) {
+            await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
           }
+          const arrayBuffer = await file.arrayBuffer();
+          const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          let allText = '';
+          for (let p = 1; p <= pdf.numPages; p++) {
+            const page = await pdf.getPage(p);
+            const content = await page.getTextContent();
+            allText += content.items.map(i => i.str).join(' ') + '\n';
+          }
+          extracted = allText.trim();
         } else if (name.endsWith('.docx')) {
           if (!window.mammoth) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
           const arrayBuffer = await file.arrayBuffer();
