@@ -455,6 +455,57 @@
   #install-banner .ib-text strong { color: var(--accent); display: block; margin-bottom: 2px; }
   #install-banner .ib-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; padding: 4px; }
 
+  /* QUIZ */
+  .quiz-question {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+  }
+  .quiz-q-text { font-weight: 600; font-size: 15px; margin-bottom: 14px; line-height: 1.5; }
+  .quiz-q-num { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .quiz-option {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-radius: 10px;
+    border: 1px solid var(--border);
+    margin-bottom: 8px; cursor: pointer;
+    transition: all 0.15s; font-size: 14px;
+    background: var(--surface2);
+  }
+  .quiz-option:hover:not(.disabled) { border-color: var(--accent); color: var(--accent); }
+  .quiz-option.correct { border-color: #60f0a0; background: rgba(96,240,160,0.12); color: #60f0a0; }
+  .quiz-option.wrong { border-color: #f06060; background: rgba(240,96,96,0.12); color: #f06060; }
+  .quiz-option.disabled { cursor: default; }
+  .quiz-option .opt-letter {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--border); display: flex;
+    align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace; font-size: 12px;
+    flex-shrink: 0; font-weight: 600;
+  }
+  .quiz-option.correct .opt-letter { background: rgba(96,240,160,0.3); }
+  .quiz-option.wrong .opt-letter { background: rgba(240,96,96,0.3); }
+  .quiz-explanation {
+    display: none; margin-top: 10px; padding: 10px 14px;
+    background: rgba(200,240,96,0.08); border-radius: 8px;
+    font-size: 13px; color: var(--muted); line-height: 1.6;
+    border-left: 3px solid var(--accent);
+  }
+  .quiz-explanation.visible { display: block; }
+  .quiz-score {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 28px; text-align: center;
+    display: none; margin-bottom: 20px;
+  }
+  .quiz-score.visible { display: block; }
+  .quiz-score-num { font-family: 'Fraunces', serif; font-size: 56px; font-weight: 700; color: var(--accent); }
+  .quiz-score-label { font-size: 16px; color: var(--muted); margin-top: 4px; }
+  .quiz-score-emoji { font-size: 40px; margin-bottom: 8px; }
+
   /* AUDIO PLAYER */
   .audio-player {
     background: var(--surface2);
@@ -575,6 +626,9 @@
     <div class="nav-item" onclick="showSection('schede')">
       <div class="dot" style="background:#f0b060"></div> Schede
     </div>
+    <div class="nav-item" onclick="showSection('quiz')">
+      <div class="dot" style="background:#f06060"></div> Quiz
+    </div>
     <div class="nav-item" onclick="showSection('ricerca')">
       <div class="dot" style="background:#a060f0"></div> Ricerca
     </div>
@@ -612,6 +666,11 @@
           <div class="feat-icon">🃏</div>
           <div class="feat-title">Schede Studio</div>
           <div class="feat-desc">Crea flashcard domanda/risposta per memorizzare i concetti chiave.</div>
+        </div>
+        <div class="feat-card" onclick="showSection('quiz')">
+          <div class="feat-icon">✅</div>
+          <div class="feat-title">Quiz a scelta multipla</div>
+          <div class="feat-desc">Mettiti alla prova con domande a crocette generate dal tuo materiale.</div>
         </div>
         <div class="feat-card" onclick="showSection('ricerca')">
           <div class="feat-icon">🔍</div>
@@ -800,6 +859,48 @@
       <div id="sch-output" class="flashcard-grid"></div>
     </div>
 
+    <!-- QUIZ -->
+    <div id="quiz" class="section">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+        <h2><em>Quiz</em> a scelta multipla</h2>
+        <span class="tag" style="background:rgba(240,96,96,0.15);color:#f06060;border:1px solid rgba(240,96,96,0.3)">AI</span>
+      </div>
+      <p class="subtitle">Genera un quiz con domande a crocette dal tuo materiale o da un tema. Seleziona la risposta per vedere subito se è corretta!</p>
+
+      <div class="card">
+        <div class="card-label">Argomento o testo</div>
+        <div class="upload-zone" onclick="document.getElementById('quiz-file').click()">
+          <div class="upload-icon">📎</div>
+          <div class="upload-text">
+            <strong>Carica un file</strong>
+            PDF, Word, TXT o foto degli appunti
+          </div>
+          <span class="upload-badge" id="quiz-file-name">Sfoglia</span>
+          <input type="file" id="quiz-file" accept=".pdf,.txt,.docx,image/*" onchange="handleFileUpload('quiz-file','quiz-input','quiz-file-name')">
+        </div>
+        <textarea id="quiz-input" placeholder="Oppure scrivi un argomento o incolla un testo... es. La Prima Guerra Mondiale"></textarea>
+        <div class="options-row" style="margin-top:14px">
+          <span style="font-size:13px;color:var(--muted);align-self:center">Domande:</span>
+          <div class="option-chip selected" onclick="selectChip(this,'quiz-num')">5</div>
+          <div class="option-chip" onclick="selectChip(this,'quiz-num')">10</div>
+          <div class="option-chip" onclick="selectChip(this,'quiz-num')">15</div>
+        </div>
+        <div class="options-row">
+          <span style="font-size:13px;color:var(--muted);align-self:center">Difficoltà:</span>
+          <div class="option-chip selected" onclick="selectChip(this,'quiz-diff')">Facile</div>
+          <div class="option-chip" onclick="selectChip(this,'quiz-diff')">Media</div>
+          <div class="option-chip" onclick="selectChip(this,'quiz-diff')">Difficile</div>
+        </div>
+        <div class="toolbar">
+          <button class="btn btn-primary" id="quiz-btn" onclick="generateQuiz()">✅ Genera quiz</button>
+          <button class="btn btn-secondary" id="quiz-retry-btn" style="display:none" onclick="resetQuiz()">🔄 Ricomincia</button>
+        </div>
+      </div>
+
+      <div id="quiz-score" class="quiz-score"></div>
+      <div id="quiz-output"></div>
+    </div>
+
     <!-- RICERCA -->
     <div id="ricerca" class="section">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
@@ -984,7 +1085,7 @@
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     const items = document.querySelectorAll('.nav-item');
-    const map = { home: 0, riassunto: 1, appunti: 2, podcast: 3, schede: 4, ricerca: 5, documento: 6 };
+    const map = { home: 0, riassunto: 1, appunti: 2, podcast: 3, schede: 4, quiz: 5, ricerca: 6, documento: 7 };
     if (map[id] !== undefined) items[map[id]].classList.add('active');
   }
 
@@ -1273,6 +1374,97 @@ ARGOMENTO: ${text}`
       document.getElementById('sch-output').innerHTML = '<p style="color:var(--muted);padding:16px">Errore nella generazione. Riprova.</p>';
     }
     setLoading('sch-btn', false);
+  }
+
+  // ── QUIZ ─────────────────────────────────────────────────────
+  let quizData = [];
+  let quizAnswered = 0;
+  let quizCorrect = 0;
+
+  async function generateQuiz() {
+    const text = document.getElementById('quiz-input').value.trim();
+    if (!text) { alert('Inserisci un argomento o del testo.'); return; }
+    const num = getSelected('quiz-num') || '5';
+    const diff = getSelected('quiz-diff') || 'Media';
+    const diffMap = { 'Facile': 'semplici e dirette', 'Media': 'di difficoltà media', 'Difficile': 'impegnative e dettagliate' };
+    setLoading('quiz-btn', true);
+    document.getElementById('quiz-output').innerHTML = '';
+    document.getElementById('quiz-score').classList.remove('visible');
+    document.getElementById('quiz-retry-btn').style.display = 'none';
+    try {
+      const result = await callClaude(
+        `Sei un professore italiano. Crea esattamente ${num} domande a scelta multipla ${diffMap[diff]} sull'argomento indicato. Ogni domanda deve avere 4 opzioni (A, B, C, D), una sola corretta. Includi una breve spiegazione della risposta corretta. Rispondi SOLO con un array JSON valido (nessun testo extra, nessun markdown):
+[{"q":"domanda","options":["A. testo","B. testo","C. testo","D. testo"],"correct":0,"explanation":"spiegazione breve"}]
+Dove "correct" e l'indice (0=A, 1=B, 2=C, 3=D) della risposta corretta.
+
+ARGOMENTO: ${text}`
+      );
+      const clean = result.replace(/\`\`\`json|\`\`\`/g,'').trim();
+      quizData = JSON.parse(clean);
+      quizAnswered = 0; quizCorrect = 0;
+      renderQuiz(quizData);
+    } catch(e) {
+      document.getElementById('quiz-output').innerHTML = '<p style="color:var(--muted);padding:16px">Errore nella generazione. Riprova.</p>';
+    }
+    setLoading('quiz-btn', false);
+  }
+
+  function renderQuiz(questions) {
+    const out = document.getElementById('quiz-output');
+    out.innerHTML = '';
+    const letters = ['A','B','C','D'];
+    questions.forEach((q, qi) => {
+      const div = document.createElement('div');
+      div.className = 'quiz-question';
+      div.id = `quiz-q-${qi}`;
+      const optHtml = q.options.map((opt, oi) => `
+        <div class="quiz-option" id="quiz-opt-${qi}-${oi}" onclick="answerQuiz(${qi},${oi})">
+          <div class="opt-letter">${letters[oi]}</div>
+          <span>${opt.replace(/^[A-D]\.\s*/,'')}</span>
+        </div>`).join('');
+      div.innerHTML = `
+        <div class="quiz-q-num">Domanda ${qi+1} di ${questions.length}</div>
+        <div class="quiz-q-text">${q.q}</div>
+        ${optHtml}
+        <div class="quiz-explanation" id="quiz-exp-${qi}">💡 ${q.explanation}</div>`;
+      out.appendChild(div);
+    });
+  }
+
+  function answerQuiz(qi, oi) {
+    const q = quizData[qi];
+    if (document.getElementById(`quiz-opt-${qi}-0`).classList.contains('disabled')) return;
+    for (let i = 0; i < q.options.length; i++) {
+      const opt = document.getElementById(`quiz-opt-${qi}-${i}`);
+      opt.classList.add('disabled');
+      if (i === q.correct) opt.classList.add('correct');
+      else if (i === oi && oi !== q.correct) opt.classList.add('wrong');
+    }
+    document.getElementById(`quiz-exp-${qi}`).classList.add('visible');
+    quizAnswered++;
+    if (oi === q.correct) quizCorrect++;
+    if (quizAnswered === quizData.length) showQuizScore();
+  }
+
+  function showQuizScore() {
+    const pct = Math.round((quizCorrect / quizData.length) * 100);
+    const emoji = pct >= 90 ? '🏆' : pct >= 70 ? '🎉' : pct >= 50 ? '👍' : '💪';
+    const msg = pct >= 90 ? 'Eccellente!' : pct >= 70 ? 'Molto bene!' : pct >= 50 ? 'Abbastanza bene!' : 'Continua a studiare!';
+    const score = document.getElementById('quiz-score');
+    score.innerHTML = `
+      <div class="quiz-score-emoji">${emoji}</div>
+      <div class="quiz-score-num">${quizCorrect}/${quizData.length}</div>
+      <div class="quiz-score-label">${msg} — ${pct}% di risposte corrette</div>`;
+    score.classList.add('visible');
+    score.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('quiz-retry-btn').style.display = 'inline-flex';
+  }
+
+  function resetQuiz() {
+    quizAnswered = 0; quizCorrect = 0;
+    renderQuiz(quizData);
+    document.getElementById('quiz-score').classList.remove('visible');
+    document.getElementById('quiz-retry-btn').style.display = 'none';
   }
 
   // ── RICERCA ──────────────────────────────────────────────────
