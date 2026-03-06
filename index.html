@@ -726,6 +726,8 @@
             <span>✨ Genera riassunto</span>
           </button>
           <button class="btn btn-secondary" onclick="clearSection('rias-input','rias-output')">Pulisci</button>
+          <button class="btn btn-secondary" id="rias-export-doc" style="display:none" onclick="buildAndDownloadDocx('Riassunto', document.getElementById('rias-output').textContent)">📄 Word</button>
+          <button class="btn btn-secondary" id="rias-export-pdf" style="display:none" onclick="buildAndDownloadPdf('Riassunto', document.getElementById('rias-output').textContent)">📑 PDF</button>
         </div>
       </div>
 
@@ -763,6 +765,8 @@
             <button class="btn btn-primary" id="app-btn" onclick="generateAppunti()">
               ✨ Elabora
             </button>
+            <button class="btn btn-secondary" id="app-export-doc" style="display:none" onclick="buildAndDownloadDocx('Appunti', document.getElementById('app-output').textContent)">📄 Word</button>
+            <button class="btn btn-secondary" id="app-export-pdf" style="display:none" onclick="buildAndDownloadPdf('Appunti', document.getElementById('app-output').textContent)">📑 PDF</button>
           </div>
         </div>
         <div class="card" style="display:flex;flex-direction:column">
@@ -1209,6 +1213,8 @@
       const out = document.getElementById('rias-output');
       out.textContent = result.trim();
       out.classList.add('visible');
+      document.getElementById('rias-export-doc').style.display = 'inline-flex';
+      document.getElementById('rias-export-pdf').style.display = 'inline-flex';
     } catch(e) {
       alert('Errore nella chiamata AI. Controlla la connessione.');
     }
@@ -1235,6 +1241,8 @@
       );
       out.textContent = result.trim();
       out.style.color = 'var(--text)';
+      document.getElementById('app-export-doc').style.display = 'inline-flex';
+      document.getElementById('app-export-pdf').style.display = 'inline-flex';
     } catch(e) {
       out.textContent = 'Errore nella chiamata AI.';
     }
