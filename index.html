@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>StudIA — Il tuo assistente di studio</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c8f060">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="StudIA">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<meta name="description" content="Il tuo assistente AI per studiare: riassunti, appunti, podcast, schede e ricerche.">
+
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,400&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e10;
+    --surface: #18181c;
+    --surface2: #222228;
+    --border: #2e2e38;
+    --accent: #c8f060;
+    --accent2: #60d4f0;
+    --accent3: #f060b0;
+    --accent4: #f0b060;
+    --text: #f0efe8;
+    --muted: #8a8a9a;
+    --radius: 14px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Instrument Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Ambient bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 10% 10%, rgba(200,240,96,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 90% 80%, rgba(96,212,240,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 50% 50%, rgba(240,96,176,0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    grid-template-rows: auto 1fr;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    grid-column: 1 / -1;
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: rgba(14,14,16,0.8);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--accent); }
+
+  .header-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .header-badge::before {
+    content: '';
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 6px var(--accent);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* SIDEBAR */
+  nav {
+    padding: 24px 16px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .nav-label {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 8px 12px 4px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.18s;
+    font-size: 14px;
+    color: var(--muted);
+    border: 1px solid transparent;
+  }
+  .nav-item:hover { background: var(--surface); color: var(--text); }
+  .nav-item.active {
+    background: var(--surface2);
+    color: var(--text);
+    border-color: var(--border);
+  }
+  .nav-item .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* MAIN */
+  main {
+    padding: 32px;
+    overflow-y: auto;
+    max-height: calc(100vh - 61px);
+  }
+
+  .section { display: none; animation: fadeIn 0.3s ease; }
+  .section.active { display: block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 300;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+  }
+  h2 em { font-style: italic; color: var(--accent); }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: #3e3e4e; }
+
+  .card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  /* INPUT AREA */
+  textarea, input[type=text] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 14px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.6;
+  }
+  textarea:focus, input[type=text]:focus { border-color: var(--accent); }
+  textarea { min-height: 140px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 22px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.18s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #0e0e10;
+  }
+  .btn-primary:hover { background: #d8ff70; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(200,240,96,0.25); }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+  /* OUTPUT */
+  .output-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 16px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text);
+    min-height: 80px;
+    display: none;
+    white-space: pre-wrap;
+  }
+  .output-box.visible { display: block; }
+
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(14,14,16,0.3);
+    border-top-color: #0e0e10;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TAGS */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+  }
+  .tag-green { background: rgba(200,240,96,0.15); color: var(--accent); border: 1px solid rgba(200,240,96,0.3); }
+  .tag-blue { background: rgba(96,212,240,0.15); color: var(--accent2); border: 1px solid rgba(96,212,240,0.3); }
+  .tag-pink { background: rgba(240,96,176,0.15); color: var(--accent3); border: 1px solid rgba(240,96,176,0.3); }
+  .tag-orange { background: rgba(240,176,96,0.15); color: var(--accent4); border: 1px solid rgba(240,176,96,0.3); }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* FLASHCARDS */
+  .flashcard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-top: 16px; }
+  .flashcard {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    cursor: pointer;
+    perspective: 600px;
+    min-height: 160px;
+    position: relative;
+  }
+  .flashcard-inner {
+    transition: transform 0.5s;
+    transform-style: preserve-3d;
+    position: relative;
+    height: 100%;
+    min-height: 120px;
+  }
+  .flashcard.flipped .flashcard-inner { transform: rotateY(180deg); }
+  .flashcard-front, .flashcard-back {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8px;
+  }
+  .flashcard-back {
+    transform: rotateY(180deg);
+    color: var(--accent);
+    font-size: 13px;
+  }
+  .flashcard-front { font-weight: 600; font-size: 15px; }
+  .fc-hint { font-size: 11px; color: var(--muted); text-align: center; margin-top: 8px; font-family: 'DM Mono', monospace; }
+
+  /* PODCAST */
+  .podcast-script {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 16px;
+    display: none;
+  }
+  .podcast-script.visible { display: block; }
+  .speaker {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    align-items: flex-start;
+  }
+  .speaker-avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+  }
+  .speaker-a { background: rgba(200,240,96,0.2); color: var(--accent); }
+  .speaker-b { background: rgba(96,212,240,0.2); color: var(--accent2); }
+  .speaker-bubble { font-size: 14px; line-height: 1.7; padding-top: 6px; }
+  .speaker-name { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); margin-bottom: 4px; }
+
+  /* HOMEPAGE */
+  .hero { text-align: center; padding: 40px 0 48px; }
+  .hero h1 { font-family: 'Fraunces', serif; font-size: 56px; font-weight: 300; letter-spacing: -2px; line-height: 1.1; margin-bottom: 16px; }
+  .hero h1 strong { font-weight: 700; color: var(--accent); }
+  .hero p { color: var(--muted); font-size: 16px; max-width: 480px; margin: 0 auto 36px; line-height: 1.6; }
+  .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 780px; margin: 0 auto; }
+  .feat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+  }
+  .feat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .feat-icon { font-size: 28px; margin-bottom: 12px; }
+  .feat-title { font-weight: 600; font-size: 15px; margin-bottom: 6px; }
+  .feat-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  /* OPTIONS ROW */
+  .options-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .option-chip {
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--muted);
+  }
+  .option-chip.selected { border-color: var(--accent); color: var(--accent); background: rgba(200,240,96,0.1); }
+
+  .toolbar { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+
+  @media (max-width: 700px) {
+    .app { grid-template-columns: 1fr; }
+    nav { display: none; }
+    main { padding: 20px; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .features-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 38px; }
+  }
+
+  /* FILE UPLOAD */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--surface2);
+  }
+  .upload-zone:hover { border-color: var(--accent); background: rgba(200,240,96,0.05); }
+  .upload-zone.dragover { border-color: var(--accent); background: rgba(200,240,96,0.1); }
+  .upload-zone input[type=file] { display: none; }
+  .upload-icon { font-size: 22px; flex-shrink: 0; }
+  .upload-text { font-size: 13px; color: var(--muted); line-height: 1.4; }
+  .upload-text strong { color: var(--text); display: block; font-size: 14px; }
+  .upload-badge {
+    margin-left: auto;
+    background: rgba(200,240,96,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(200,240,96,0.3);
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    white-space: nowrap;
+  }
+
+
+  #install-banner {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 14px;
+    padding: 14px 20px;
+    align-items: center;
+    gap: 14px;
+    z-index: 999;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    max-width: 340px;
+    width: calc(100% - 40px);
+  }
+  #install-banner .ib-icon { font-size: 28px; }
+  #install-banner .ib-text { flex: 1; font-size: 13px; line-height: 1.4; color: var(--text); }
+  #install-banner .ib-text strong { color: var(--accent); display: block; margin-bottom: 2px; }
+  #install-banner .ib-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; padding: 4px; }
+
+  /* SETUP OVERLAY */
+  #setup-overlay {
+    display: none; position: fixed; inset: 0; z-index: 9999;
+    background: rgba(10,10,12,0.95); backdrop-filter: blur(12px);
+    align-items: center; justify-content: center;
+  }
+  .setup-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 36px;
+    max-width: 420px; width: calc(100% - 40px); text-align: center;
+  }
+  .setup-box .setup-icon { font-size: 48px; margin-bottom: 16px; }
+  .setup-box h3 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 300; margin-bottom: 8px; }
+  .setup-box p { color: var(--muted); font-size: 14px; line-height: 1.6; margin-bottom: 24px; }
+  .setup-box input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px; color: var(--text);
+    font-family: 'DM Mono', monospace; font-size: 13px; outline: none; margin-bottom: 14px;
+  }
+  .setup-box input:focus { border-color: var(--accent); }
+  .setup-link { font-size: 12px; color: var(--muted); margin-top: 12px; }
+  .setup-link a { color: var(--accent); text-decoration: none; }
+
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SETUP OVERLAY -->
+  <div id="setup-overlay">
+    <div class="setup-box">
+      <div class="setup-icon">🔑</div>
+      <h3>Configura <em>StudIA</em></h3>
+      <p>Inserisci la tua chiave API di OpenAI per attivare l'intelligenza artificiale. La chiave viene salvata solo sul tuo dispositivo.</p>
+      <input type="password" id="setup-key-input" placeholder="sk-proj-...">
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="saveKey()">✨ Attiva StudIA</button>
+      <div class="setup-link">Ottieni la chiave su <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></div>
+    </div>
+  </div>
+
+  <!-- Install Banner (Android/Chrome) -->
+  <div id="install-banner">
+    <div class="ib-icon">📲</div>
+    <div class="ib-text">
+      <strong>Installa StudIA</strong>
+      Aggiungila alla schermata Home come un'app!
+    </div>
+    <button class="btn btn-primary" style="white-space:nowrap;padding:8px 14px;font-size:13px" onclick="installApp()">Installa</button>
+    <button class="ib-close" onclick="this.parentElement.style.display='none'">✕</button>
+  </div>
+  <!-- HEADER -->
+  <header>
+    <div class="logo">Stud<span>IA</span></div>
+    <div class="header-badge">AI attiva</div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <nav>
+    <div class="nav-label">Strumenti</div>
+    <div class="nav-item active" onclick="showSection('home')">
+      <div class="dot" style="background:#c8f060"></div> Home
+    </div>
+    <div class="nav-item" onclick="showSection('riassunto')">
+      <div class="dot" style="background:#c8f060"></div> Riassunti
+    </div>
+    <div class="nav-item" onclick="showSection('appunti')">
+      <div class="dot" style="background:#60d4f0"></div> Appunti
+    </div>
+    <div class="nav-item" onclick="showSection('podcast')">
+      <div class="dot" style="background:#f060b0"></div> Podcast
+    </div>
+    <div class="nav-item" onclick="showSection('schede')">
+      <div class="dot" style="background:#f0b060"></div> Schede
+    </div>
+    <div class="nav-item" onclick="showSection('ricerca')">
+      <div class="dot" style="background:#a060f0"></div> Ricerca
+    </div>
+    <div class="nav-item" onclick="showSection('documento')">
+      <div class="dot" style="background:#60f0a0"></div> Documento
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main>
+
+    <!-- HOME -->
+    <div id="home" class="section active">
+      <div class="hero">
+        <h1>Studia meglio,<br>con l'<strong>intelligenza</strong></h1>
+        <p>Il tuo assistente personale per riassumere, elaborare appunti, creare podcast didattici e schede di valutazione.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feat-card" onclick="showSection('riassunto')">
+          <div class="feat-icon">📄</div>
+          <div class="feat-title">Riassunti</div>
+          <div class="feat-desc">Incolla un testo e ottieni un riassunto chiaro e conciso in pochi secondi.</div>
+        </div>
+        <div class="feat-card" onclick="showSection('appunti')">
+          <div class="feat-icon">✏️</div>
+          <div class="feat-title">Elabora Appunti</div>
+          <div class="feat-desc">Trasforma appunti disorganizzati in materiale di studio strutturato.</div>
+        </div>
+        <div class="feat-card" onclick="showSection('podcast')">
+          <div class="feat-icon">🎙️</div>
+          <div class="feat-title">Podcast Didattico</div>
+          <div class="feat-desc">Genera uno script conversazionale tra due host che spiegano l'argomento.</div>
+        </div>
+        <div class="feat-card" onclick="showSection('schede')">
+          <div class="feat-icon">🃏</div>
+          <div class="feat-title">Schede Studio</div>
+          <div class="feat-desc">Crea flashcard domanda/risposta per memorizzare i concetti chiave.</div>
+        </div>
+        <div class="feat-card" onclick="showSection('ricerca')">
+          <div class="feat-icon">🔍</div>
+          <div class="feat-title">Ricerca tematica</div>
+          <div class="feat-desc">Inserisci un tema e ottieni una ricerca completa e strutturata, pronta da leggere.</div>
+        </div>
+        <div class="feat-card" onclick="showSection('documento')">
+          <div class="feat-icon">📝</div>
+          <div class="feat-title">Crea documento</div>
+          <div class="feat-desc">Genera e scarica un documento Word (.docx) formattato, pronto da consegnare.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIASSUNTI -->
+    <div id="riassunto" class="section">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+        <h2><em>Riassunti</em></h2>
+        <span class="tag tag-green">AI</span>
+      </div>
+      <p class="subtitle">Incolla qualsiasi testo — un capitolo, un articolo, dei paragrafi — e otterrai un riassunto chiaro.</p>
+
+      <div class="card">
+        <div class="card-label">Testo da riassumere</div>
+        <div class="upload-zone" onclick="document.getElementById('rias-file').click()" id="rias-dropzone">
+          <div class="upload-icon">📎</div>
+          <div class="upload-text">
+            <strong>Carica un file</strong>
+            PDF, Word (.docx), TXT oppure foto degli appunti
+          </div>
+          <span class="upload-badge" id="rias-file-name">Sfoglia</span>
+          <input type="file" id="rias-file" accept=".pdf,.txt,.docx,image/*" onchange="handleFileUpload('rias-file','rias-input','rias-file-name')">
+        </div>
+        <textarea id="rias-input" placeholder="Oppure incolla qui il testo che vuoi riassumere..."></textarea>
+
+        <div class="options-row" style="margin-top:14px">
+          <span style="font-size:13px;color:var(--muted);align-self:center">Lunghezza:</span>
+          <div class="option-chip selected" onclick="selectChip(this,'rias-len')">Breve</div>
+          <div class="option-chip" onclick="selectChip(this,'rias-len')">Medio</div>
+          <div class="option-chip" onclick="selectChip(this,'rias-len')">Dettagliato</div>
+        </div>
+        <div class="options-row">
+          <span style="font-size:13px;color:var(--muted);align-self:center">Stile:</span>
+          <div class="option-chip selected" onclick="selectChip(this,'rias-style')">Semplice</div>
+          <div class="option-chip" onclick="selectChip(this,'rias-style')">Punti elenco</div>
+          <div class="option-chip" onclick="selectChip(this,'rias-style')">Accademico</div>
+        </div>
+
+        <div class="toolbar">
+          <button class="btn btn-primary" id="rias-btn" onclick="generateRiassunto()">
+            <span>✨ Genera riassunto</span>
+          </button>
+          <button class="btn btn-secondary" onclick="clearSection('rias-input','rias-output')">Pulisci</button>
+        </div>
+      </div>
+
+      <div id="rias-output" class="output-box"></div>
+    </div>
+
+    <!-- APPUNTI -->
+    <div id="appunti" class="section">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+        <h2><em>Appunti</em></h2>
+        <span class="tag tag-blue">AI</span>
+      </div>
+      <p class="subtitle">Incolla i tuoi appunti grezzi — anche disorganizzati — e l'AI li struttura per te.</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-label">I tuoi appunti</div>
+          <div class="upload-zone" onclick="document.getElementById('app-file').click()">
+            <div class="upload-icon">📎</div>
+            <div class="upload-text">
+              <strong>Carica un file</strong>
+              PDF, Word, TXT o foto degli appunti
+            </div>
+            <span class="upload-badge" id="app-file-name">Sfoglia</span>
+            <input type="file" id="app-file" accept=".pdf,.txt,.docx,image/*" onchange="handleFileUpload('app-file','app-input','app-file-name')">
+          </div>
+          <textarea id="app-input" placeholder="Oppure scrivi/incolla i tuoi appunti..."></textarea>
+          <div class="options-row" style="margin-top:14px">
+            <span style="font-size:13px;color:var(--muted);align-self:center">Formato output:</span>
+            <div class="option-chip selected" onclick="selectChip(this,'app-fmt')">Strutturato</div>
+            <div class="option-chip" onclick="selectChip(this,'app-fmt')">Schema</div>
+            <div class="option-chip" onclick="selectChip(this,'app-fmt')">Mappa mentale</div>
+          </div>
+          <div class="toolbar">
+            <button class="btn btn-primary" id="app-btn" onclick="generateAppunti()">
+              ✨ Elabora
+            </button>
+          </div>
+        </div>
+        <div class="card" style="display:flex;flex-direction:column">
+          <div class="card-label">Risultato elaborato</div>
+          <div id="app-output" style="flex:1;font-size:14px;line-height:1.8;color:var(--muted);white-space:pre-wrap">
+            Gli appunti elaborati appariranno qui...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PODCAST -->
+    <div id="podcast" class="section">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+        <h2><em>Podcast</em> didattico</h2>
+        <span class="tag tag-pink">AI</span>
+      </div>
+      <p class="subtitle">Trasforma qualsiasi argomento in una conversazione coinvolgente tra due presentatori.</p>
+
+      <div class="card">
+        <div class="card-label">Argomento o testo</div>
+        <div class="upload-zone" onclick="document.getElementById('pod-file').click()">
+          <div class="upload-icon">📎</div>
+          <div class="upload-text">
+            <strong>Carica un file</strong>
+            PDF, Word, TXT o foto degli appunti
+          </div>
+          <span class="upload-badge" id="pod-file-name">Sfoglia</span>
+          <input type="file" id="pod-file" accept=".pdf,.txt,.docx,image/*" onchange="handleFileUpload('pod-file','pod-input','pod-file-name')">
+        </div>
+        <textarea id="pod-input" placeholder="Oppure scrivi un argomento o incolla un testo..."></textarea>
+        <div class="options-row" style="margin-top:14px">
+          <span style="font-size:13px;color:var(--muted);align-self:center">Stile:</span>
+          <div class="option-chip selected" onclick="selectChip(this,'pod-style')">Informale</div>
+          <div class="option-chip" onclick="selectChip(this,'pod-style')">Educativo</div>
+          <div class="option-chip" onclick="selectChip(this,'pod-style')">Domande & Risposte</div>
+        </div>
+        <div class="toolbar">
+          <button class="btn btn-primary" id="pod-btn" onclick="generatePodcast()">
+            🎙️ Genera script
+          </button>
+        </div>
+      </div>
+
+      <div id="pod-output" class="podcast-script"></div>
+    </div>
+
+    <!-- SCHEDE -->
+    <div id="schede" class="section">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+        <h2><em>Schede</em> di studio</h2>
+        <span class="tag tag-orange">AI</span>
+      </div>
+      <p class="subtitle">Genera flashcard domanda/risposta. Clicca su una scheda per rivelare la risposta.</p>
+
+      <div class="card">
+        <div class="card-label">Argomento o testo</div>
+        <div class="upload-zone" onclick="document.getElementById('sch-file').click()">
+          <div class="upload-icon">📎</div>
+          <div class="upload-text">
+            <strong>Carica un file</strong>
+            PDF, Word, TXT o foto degli appunti
+          </div>
+          <span class="upload-badge" id="sch-file-name">Sfoglia</span>
+          <input type="file" id="sch-file" accept=".pdf,.txt,.docx,image/*" onchange="handleFileUpload('sch-file','sch-input','sch-file-name')">
+        </div>
+        <textarea id="sch-input" placeholder="Oppure scrivi un argomento o incolla un testo..."></textarea>
+        <div class="options-row" style="margin-top:14px">
+          <span style="font-size:13px;color:var(--muted);align-self:center">Numero schede:</span>
+          <div class="option-chip selected" onclick="selectChip(this,'sch-num')">5</div>
+          <div class="option-chip" onclick="selectChip(this,'sch-num')">10</div>
+          <div class="option-chip" onclick="selectChip(this,'sch-num')">15</div>
+        </div>
+        <div class="toolbar">
+          <button class="btn btn-primary" id="sch-btn" onclick="generateSchede()">
+            🃏 Crea schede
+          </button>
+        </div>
+      </div>
+
+      <div id="sch-output" class="flashcard-grid"></div>
+    </div>
+
+    <!-- RICERCA -->
+    <div id="ricerca" class="section">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+        <h2><em>Ricerca</em> tematica</h2>
+        <span class="tag" style="background:rgba(160,96,240,0.15);color:#a060f0;border:1px solid rgba(160,96,240,0.3)">AI</span>
+      </div>
+      <p class="subtitle">Inserisci un tema e ottieni una ricerca completa con introduzione, sviluppo, conclusione e fonti.</p>
+
+      <div class="card">
+        <div class="card-label">Tema della ricerca</div>
+        <input type="text" id="ric-input" placeholder="es. La Rivoluzione Francese, Il cambiamento climatico, La fotosintesi...">
+        <div class="options-row" style="margin-top:14px">
+          <span style="font-size:13px;color:var(--muted);align-self:center">Livello:</span>
+          <div class="option-chip selected" onclick="selectChip(this,'ric-lvl')">Scuola media</div>
+          <div class="option-chip" onclick="selectChip(this,'ric-lvl')">Liceo</div>
+          <div class="option-chip" onclick="selectChip(this,'ric-lvl')">Università</div>
+        </div>
+        <div class="options-row">
+          <span style="font-size:13px;color:var(--muted);align-self:center">Lunghezza:</span>
+          <div class="option-chip selected" onclick="selectChip(this,'ric-len')">Breve</div>
+          <div class="option-chip" onclick="selectChip(this,'ric-len')">Media</div>
+          <div class="option-chip" onclick="selectChip(this,'ric-len')">Approfondita</div>
+        </div>
+        <div class="toolbar">
+          <button class="btn btn-primary" id="ric-btn" onclick="generateRicerca()">🔍 Avvia ricerca</button>
+          <button class="btn btn-secondary" onclick="exportRicercaDoc()" id="ric-export-btn" style="display:none">📄 Scarica .docx</button>
+        </div>
+      </div>
+
+      <div id="ric-output" class="output-box" style="white-space:pre-wrap;line-height:1.9"></div>
+    </div>
+
+    <!-- DOCUMENTO -->
+    <div id="documento" class="section">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+        <h2><em>Documento</em> Word</h2>
+        <span class="tag" style="background:rgba(96,240,160,0.15);color:#60f0a0;border:1px solid rgba(96,240,160,0.3)">AI + .docx</span>
+      </div>
+      <p class="subtitle">Descrivi il documento che ti serve e lo genereremo formattato, pronto da aprire in Word.</p>
+
+      <div class="card">
+        <div class="card-label">Tipo di documento</div>
+        <div class="options-row" style="margin-bottom:14px">
+          <div class="option-chip selected" onclick="selectChip(this,'doc-type')">Ricerca / Relazione</div>
+          <div class="option-chip" onclick="selectChip(this,'doc-type')">Riassunto</div>
+          <div class="option-chip" onclick="selectChip(this,'doc-type')">Tema argomentativo</div>
+          <div class="option-chip" onclick="selectChip(this,'doc-type')">Scheda libro</div>
+        </div>
+        <div class="card-label">Argomento e istruzioni</div>
+        <div class="upload-zone" onclick="document.getElementById('doc-file').click()">
+          <div class="upload-icon">📎</div>
+          <div class="upload-text">
+            <strong>Carica un file di base</strong>
+            PDF, Word, TXT — il contenuto verrà usato come base per il documento
+          </div>
+          <span class="upload-badge" id="doc-file-name">Sfoglia</span>
+          <input type="file" id="doc-file" accept=".pdf,.txt,.docx,image/*" onchange="handleFileUpload('doc-file','doc-input','doc-file-name')">
+        </div>
+        <textarea id="doc-input" placeholder="Oppure descrivi il documento: es. Scrivi una relazione su Alessandro Magno..."></textarea>
+        <div class="options-row" style="margin-top:14px">
+          <span style="font-size:13px;color:var(--muted);align-self:center">Tono:</span>
+          <div class="option-chip selected" onclick="selectChip(this,'doc-tone')">Scolastico</div>
+          <div class="option-chip" onclick="selectChip(this,'doc-tone')">Formale</div>
+          <div class="option-chip" onclick="selectChip(this,'doc-tone')">Semplice</div>
+        </div>
+        <div class="toolbar">
+          <button class="btn btn-primary" id="doc-btn" onclick="generateDocumento()">📝 Genera e scarica</button>
+        </div>
+      </div>
+
+      <div id="doc-status" class="output-box" style="line-height:1.9"></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // ── FILE UPLOAD ──────────────────────────────────────────────
+  async function handleFileUpload(inputId, textareaId, badgeId) {
+    const file = document.getElementById(inputId).files[0];
+    if (!file) return;
+    const badge = document.getElementById(badgeId);
+    const textarea = document.getElementById(textareaId);
+    const name = file.name.length > 20 ? file.name.substring(0,18)+'…' : file.name;
+    badge.textContent = '⏳ Lettura...';
+
+    try {
+      // IMAGE → send to Claude vision
+      if (file.type.startsWith('image/')) {
+        const b64 = await fileToBase64(file);
+        badge.textContent = '🖼️ ' + name;
+        textarea.value = '';
+        textarea.placeholder = '⏳ Estrazione testo dall\'immagine...';
+        const extracted = await callClaudeWithContent([
+          { type: "image", source: { type: "base64", media_type: file.type, data: b64 } },
+          { type: "text", text: "Trascrivi tutto il testo visibile in questa immagine, esattamente come appare. Rispondi SOLO con il testo trascritto, senza commenti." }
+        ]);
+        textarea.value = extracted.trim();
+        textarea.placeholder = '';
+
+      // TXT → read directly
+      } else if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+        const text = await file.text();
+        textarea.value = text;
+        badge.textContent = '📄 ' + name;
+
+      // PDF → send to Claude
+      } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+        const b64 = await fileToBase64(file);
+        badge.textContent = '📄 ' + name;
+        textarea.value = '';
+        textarea.placeholder = '⏳ Estrazione testo dal PDF...';
+        const extracted = await callClaudeWithContent([
+          { type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } },
+          { type: "text", text: "Estrai e trascrivi tutto il testo di questo documento. Rispondi SOLO con il testo, senza commenti." }
+        ]);
+        textarea.value = extracted.trim();
+        textarea.placeholder = '';
+
+      // DOCX → read as plain text fallback
+      } else if (file.name.endsWith('.docx')) {
+        badge.textContent = '📝 ' + name;
+        textarea.placeholder = '⏳ Lettura del file Word...';
+        // Use mammoth via CDN if available, else fallback message
+        if (!window.mammoth) {
+          await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
+        }
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        textarea.value = result.value.trim();
+        textarea.placeholder = '';
+
+      } else {
+        badge.textContent = '⚠️ Formato non supportato';
+      }
+    } catch(e) {
+      badge.textContent = '❌ Errore lettura';
+      textarea.placeholder = 'Errore nella lettura del file. Prova a incollare il testo manualmente.';
+      console.error(e);
+    }
+  }
+
+  function fileToBase64(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+  }
+
+  function loadScript(src) {
+    return new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = src; s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+
+  // Drag-and-drop support
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.upload-zone').forEach(zone => {
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        const fileInput = zone.querySelector('input[type=file]');
+        if (fileInput && e.dataTransfer.files[0]) {
+          const dt = new DataTransfer();
+          dt.items.add(e.dataTransfer.files[0]);
+          fileInput.files = dt.files;
+          fileInput.dispatchEvent(new Event('change'));
+        }
+      });
+    });
+  });
+
+  // ── Navigation ──────────────────────────────────────────────
+  function showSection(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    const items = document.querySelectorAll('.nav-item');
+    const map = { home: 0, riassunto: 1, appunti: 2, podcast: 3, schede: 4, ricerca: 5, documento: 6 };
+    if (map[id] !== undefined) items[map[id]].classList.add('active');
+  }
+
+  function selectChip(el, group) {
+    document.querySelectorAll(`[onclick*="${group}"]`).forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function getSelected(group) {
+    const el = document.querySelector(`[onclick*="${group}"].selected`);
+    return el ? el.textContent.trim() : '';
+  }
+
+  function clearSection(inputId, outputId) {
+    document.getElementById(inputId).value = '';
+    const out = document.getElementById(outputId);
+    out.classList.remove('visible');
+    out.textContent = '';
+  }
+
+  function setLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    if (loading) {
+      btn._orig = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span> Elaborazione...';
+      btn.disabled = true;
+    } else {
+      btn.innerHTML = btn._orig;
+      btn.disabled = false;
+    }
+  }
+
+  // ── Claude API call ──────────────────────────────────────────
+  async function callClaude(prompt) {
+    const key = localStorage.getItem('openai_key');
+    if (!key) { showSetup(); throw new Error('Chiave API mancante'); }
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await response.json();
+    if (data.error) { if(data.error.code==='invalid_api_key'){localStorage.removeItem('openai_key');showSetup();} throw new Error(data.error.message); }
+    return data.choices[0].message.content;
+  }
+
+  // ── Claude Vision call ────────────────────────────────────────
+  async function callClaudeWithContent(contentArray) {
+    const key = localStorage.getItem('openai_key');
+    if (!key) { showSetup(); throw new Error('Chiave API mancante'); }
+    const parts = contentArray.map(p => {
+      if (p.type === 'text') return { type: 'text', text: p.text };
+      if (p.type === 'image') return { type: 'image_url', image_url: { url: `data:${p.source.media_type};base64,${p.source.data}` } };
+      return { type: 'text', text: p.text || '' };
+    });
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+      body: JSON.stringify({ model: "gpt-4o-mini", max_tokens: 1000, messages: [{ role: "user", content: parts }] })
+    });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.choices[0].message.content;
+  }
+
+  function showSetup() { document.getElementById('setup-overlay').style.display='flex'; }
+  function saveKey() {
+    const k = document.getElementById('setup-key-input').value.trim();
+    if (!k.startsWith('sk-')) { alert('La chiave deve iniziare con sk-'); return; }
+    localStorage.setItem('openai_key', k);
+    document.getElementById('setup-overlay').style.display='none';
+  }
+  window.addEventListener('DOMContentLoaded', () => {
+    if (!localStorage.getItem('openai_key')) showSetup();
+  });
+
+  // ── RIASSUNTI ────────────────────────────────────────────────
+  async function generateRiassunto() {
+    const text = document.getElementById('rias-input').value.trim();
+    if (!text) { alert('Inserisci un testo da riassumere.'); return; }
+    const len = getSelected('rias-len');
+    const style = getSelected('rias-style');
+    const lenMap = { 'Breve': '3-4 frasi', 'Medio': '8-10 frasi', 'Dettagliato': 'un paragrafo completo ben sviluppato' };
+    const styleMap = {
+      'Semplice': 'in prosa semplice e chiara',
+      'Punti elenco': 'come lista di punti elenco con • per ogni punto chiave',
+      'Accademico': 'con linguaggio accademico strutturato'
+    };
+    setLoading('rias-btn', true);
+    try {
+      const result = await callClaude(
+        `Sei un assistente per studenti italiani. Riassumi il seguente testo in ${lenMap[len] || '5-6 frasi'}, ${styleMap[style] || 'in modo chiaro'}. Rispondi SOLO con il riassunto, senza preamboli.\n\nTESTO:\n${text}`
+      );
+      const out = document.getElementById('rias-output');
+      out.textContent = result.trim();
+      out.classList.add('visible');
+    } catch(e) {
+      alert('Errore nella chiamata AI. Controlla la connessione.');
+    }
+    setLoading('rias-btn', false);
+  }
+
+  // ── APPUNTI ──────────────────────────────────────────────────
+  async function generateAppunti() {
+    const text = document.getElementById('app-input').value.trim();
+    if (!text) { alert('Inserisci i tuoi appunti.'); return; }
+    const fmt = getSelected('app-fmt');
+    const fmtMap = {
+      'Strutturato': 'Come testo strutturato con titoli, sottotitoli e paragrafi ben organizzati.',
+      'Schema': 'Come schema gerarchico con titoli, sottopunti e indentazione.',
+      'Mappa mentale': 'Come mappa mentale testuale con il concetto centrale e rami tematici.'
+    };
+    setLoading('app-btn', true);
+    const out = document.getElementById('app-output');
+    out.textContent = 'Elaborazione...';
+    out.style.color = 'var(--muted)';
+    try {
+      const result = await callClaude(
+        `Sei un assistente per studenti italiani. Prendi questi appunti grezzi e organizzali in materiale di studio chiaro e completo. ${fmtMap[fmt] || ''} Completa le informazioni mancanti se necessario. Rispondi SOLO con gli appunti elaborati.\n\nAPPUNTI:\n${text}`
+      );
+      out.textContent = result.trim();
+      out.style.color = 'var(--text)';
+    } catch(e) {
+      out.textContent = 'Errore nella chiamata AI.';
+    }
+    setLoading('app-btn', false);
+  }
+
+  // ── PODCAST ──────────────────────────────────────────────────
+  async function generatePodcast() {
+    const text = document.getElementById('pod-input').value.trim();
+    if (!text) { alert('Inserisci un argomento o un testo.'); return; }
+    const style = getSelected('pod-style');
+    setLoading('pod-btn', true);
+    try {
+      const result = await callClaude(
+        `Sei un autore di podcast educativi italiani. Crea uno script di podcast con due conduttori (ALEX e SOFIA) che discutono il seguente argomento in modo ${style === 'Informale' ? 'informale e coinvolgente' : style === 'Educativo' ? 'educativo e chiaro' : 'domande e risposte'}. Devono fare almeno 6-8 scambi. Usa questo formato esatto (senza altro testo):
+ALEX: [testo]
+SOFIA: [testo]
+ALEX: [testo]
+...
+
+ARGOMENTO: ${text}`
+      );
+      renderPodcast(result.trim());
+    } catch(e) {
+      alert('Errore nella chiamata AI.');
+    }
+    setLoading('pod-btn', false);
+  }
+
+  function renderPodcast(script) {
+    const out = document.getElementById('pod-output');
+    out.innerHTML = '';
+    const lines = script.split('\n').filter(l => l.trim());
+    lines.forEach(line => {
+      const isAlex = line.startsWith('ALEX:');
+      const isSofia = line.startsWith('SOFIA:');
+      if (!isAlex && !isSofia) return;
+      const name = isAlex ? 'ALEX' : 'SOFIA';
+      const text = line.replace(/^(ALEX|SOFIA):/, '').trim();
+      const div = document.createElement('div');
+      div.className = 'speaker';
+      div.innerHTML = `
+        <div class="speaker-avatar ${isAlex ? 'speaker-a' : 'speaker-b'}">${name[0]}</div>
+        <div>
+          <div class="speaker-name">${name}</div>
+          <div class="speaker-bubble">${text}</div>
+        </div>`;
+      out.appendChild(div);
+    });
+    out.classList.add('visible');
+  }
+
+  // ── SCHEDE ───────────────────────────────────────────────────
+  async function generateSchede() {
+    const text = document.getElementById('sch-input').value.trim();
+    if (!text) { alert('Inserisci un argomento o un testo.'); return; }
+    const num = getSelected('sch-num') || '5';
+    setLoading('sch-btn', true);
+    document.getElementById('sch-output').innerHTML = '';
+    try {
+      const result = await callClaude(
+        `Sei un assistente per studenti italiani. Crea esattamente ${num} flashcard di studio sull'argomento indicato. Rispondi SOLO con un array JSON valido in questo formato (nessun altro testo, nessun markdown):
+[{"q":"domanda","a":"risposta"},...]
+
+ARGOMENTO: ${text}`
+      );
+      const clean = result.replace(/```json|```/g,'').trim();
+      const cards = JSON.parse(clean);
+      renderSchede(cards);
+    } catch(e) {
+      document.getElementById('sch-output').innerHTML = '<p style="color:var(--muted);padding:16px">Errore nella generazione. Riprova.</p>';
+    }
+    setLoading('sch-btn', false);
+  }
+
+  // ── RICERCA ──────────────────────────────────────────────────
+  let lastRicercaText = '';
+
+  async function generateRicerca() {
+    const tema = document.getElementById('ric-input').value.trim();
+    if (!tema) { alert('Inserisci un tema di ricerca.'); return; }
+    const lvl = getSelected('ric-lvl') || 'Liceo';
+    const len = getSelected('ric-len') || 'Media';
+    const lenMap = { 'Breve': '300-400 parole', 'Media': '600-800 parole', 'Approfondita': '1000-1200 parole' };
+    setLoading('ric-btn', true);
+    document.getElementById('ric-export-btn').style.display = 'none';
+    const out = document.getElementById('ric-output');
+    out.textContent = '';
+    out.classList.add('visible');
+    try {
+      const result = await callClaude(
+        `Sei un professore italiano. Scrivi una ricerca scolastica completa sul tema "${tema}" adatta a studenti di ${lvl}, lunga circa ${lenMap[len]}. Struttura con: 1) Introduzione, 2) almeno 2-3 sezioni tematiche con titolo, 3) Conclusione, 4) Fonti consigliate (3-5 voci). Usa un linguaggio chiaro e preciso. Rispondi SOLO con il testo della ricerca.`
+      );
+      lastRicercaText = result.trim();
+      out.textContent = lastRicercaText;
+      document.getElementById('ric-export-btn').style.display = 'inline-flex';
+    } catch(e) {
+      out.textContent = 'Errore nella generazione. Riprova.';
+    }
+    setLoading('ric-btn', false);
+  }
+
+  async function exportRicercaDoc() {
+    if (!lastRicercaText) return;
+    const tema = document.getElementById('ric-input').value.trim() || 'Ricerca';
+    buildAndDownloadDocx(tema, lastRicercaText);
+  }
+
+  // ── DOCUMENTO ────────────────────────────────────────────────
+  async function generateDocumento() {
+    const istruzioni = document.getElementById('doc-input').value.trim();
+    if (!istruzioni) { alert('Descrivi il documento che vuoi creare.'); return; }
+    const tipo = getSelected('doc-type') || 'Ricerca / Relazione';
+    const tono = getSelected('doc-tone') || 'Scolastico';
+    const tonoMap = { 'Scolastico': 'scolastico e chiaro', 'Formale': 'formale e accademico', 'Semplice': 'semplice e accessibile' };
+    setLoading('doc-btn', true);
+    const status = document.getElementById('doc-status');
+    status.textContent = '⏳ Generazione contenuto in corso...';
+    status.classList.add('visible');
+    try {
+      const result = await callClaude(
+        `Sei un assistente scolastico italiano. Scrivi un documento di tipo "${tipo}" con tono ${tonoMap[tono]} basato su queste istruzioni:\n${istruzioni}\n\nStruttura il documento con titolo, sezioni chiare e conclusione. Rispondi SOLO con il testo del documento.`
+      );
+      const content = result.trim();
+      // Extract title from first line
+      const lines = content.split('\n');
+      const title = lines[0].replace(/^#+\s*/, '').trim() || tipo;
+      status.textContent = '⬇️ Preparazione file Word...';
+      await buildAndDownloadDocx(title, content);
+      status.textContent = '✅ Documento scaricato! Aprilo con Microsoft Word o LibreOffice.';
+    } catch(e) {
+      status.textContent = '❌ Errore nella generazione. Riprova.';
+    }
+    setLoading('doc-btn', false);
+  }
+
+  // ── DOCX Builder (client-side via docx CDN) ──────────────────
+  async function buildAndDownloadDocx(title, text) {
+    // Load docx library dynamically
+    if (!window.docx) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+    const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } = window.docx;
+
+    const children = [];
+
+    // Title
+    children.push(new Paragraph({
+      heading: HeadingLevel.TITLE,
+      alignment: AlignmentType.CENTER,
+      children: [new TextRun({ text: title, bold: true, size: 36, font: 'Arial' })]
+    }));
+    children.push(new Paragraph({ children: [new TextRun('')] }));
+
+    // Parse lines
+    const lines = text.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) {
+        children.push(new Paragraph({ children: [new TextRun('')] }));
+        continue;
+      }
+      if (/^#{1,2}\s/.test(trimmed) || /^\d+\)\s/.test(trimmed) || trimmed.length < 60 && trimmed.endsWith(':')) {
+        const headText = trimmed.replace(/^#{1,2}\s*/, '').replace(/^\d+\)\s*/, '').replace(/:$/, '');
+        children.push(new Paragraph({
+          heading: HeadingLevel.HEADING_1,
+          children: [new TextRun({ text: headText, bold: true, size: 28, font: 'Arial' })]
+        }));
+      } else if (/^###\s/.test(trimmed)) {
+        children.push(new Paragraph({
+          heading: HeadingLevel.HEADING_2,
+          children: [new TextRun({ text: trimmed.replace(/^###\s*/, ''), bold: true, size: 24, font: 'Arial' })]
+        }));
+      } else {
+        children.push(new Paragraph({
+          children: [new TextRun({ text: trimmed, size: 24, font: 'Arial' })],
+          spacing: { after: 120 }
+        }));
+      }
+    }
+
+    // Footer note
+    children.push(new Paragraph({ children: [new TextRun('')] }));
+    children.push(new Paragraph({
+      alignment: AlignmentType.RIGHT,
+      children: [new TextRun({ text: `Generato con StudIA — ${new Date().toLocaleDateString('it-IT')}`, size: 18, color: '888888', italics: true, font: 'Arial' })]
+    }));
+
+    const doc = new Document({
+      styles: {
+        default: { document: { run: { font: 'Arial', size: 24 } } }
+      },
+      sections: [{
+        properties: {
+          page: { size: { width: 11906, height: 16838 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } }
+        },
+        children
+      }]
+    });
+
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.replace(/[^a-zA-Z0-9À-ÿ\s]/g,'').substring(0,40).trim()}.docx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function renderSchede(cards) {
+    const grid = document.getElementById('sch-output');
+    grid.innerHTML = '';
+    cards.forEach((card, i) => {
+      const el = document.createElement('div');
+      el.className = 'flashcard';
+      el.innerHTML = `
+        <div class="flashcard-inner">
+          <div class="flashcard-front">${card.q}</div>
+          <div class="flashcard-back">${card.a}</div>
+        </div>
+        <div class="fc-hint">clicca per risposta</div>`;
+      el.addEventListener('click', () => {
+        el.classList.toggle('flipped');
+        el.querySelector('.fc-hint').textContent = el.classList.contains('flipped') ? 'clicca per domanda' : 'clicca per risposta';
+      });
+      grid.appendChild(el);
+    });
+  }
+</script>
+
+<!-- PWA Service Worker -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('StudIA SW registrato:', reg.scope))
+        .catch(err => console.log('SW errore:', err));
+    });
+  }
+
+  // Install prompt banner
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const banner = document.getElementById('install-banner');
+    if (banner) banner.style.display = 'flex';
+  });
+
+  function installApp() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => {
+      deferredPrompt = null;
+      const banner = document.getElementById('install-banner');
+      if (banner) banner.style.display = 'none';
+    });
+  }
+
+  window.addEventListener('appinstalled', () => {
+    const banner = document.getElementById('install-banner');
+    if (banner) banner.style.display = 'none';
+  });
+</script>
+</body>
+</html>
