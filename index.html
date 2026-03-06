@@ -1189,78 +1189,37 @@ ARGOMENTO: ${text}`
 
   // ── DOCX Builder (client-side via docx CDN) ──────────────────
   async function buildAndDownloadDocx(title, text) {
-    // Load docx library dynamically
-    if (!window.docx) {
-      await new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js';
-        s.onload = resolve; s.onerror = reject;
-        document.head.appendChild(s);
-      });
-    }
-    const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } = window.docx;
-
-    const children = [];
-
-    // Title
-    children.push(new Paragraph({
-      heading: HeadingLevel.TITLE,
-      alignment: AlignmentType.CENTER,
-      children: [new TextRun({ text: title, bold: true, size: 36, font: 'Arial' })]
-    }));
-    children.push(new Paragraph({ children: [new TextRun('')] }));
-
-    // Parse lines
+    // Convert markdown-style text to clean HTML, then save as .html file
+    // (opens perfectly in Word when renamed or opened directly)
     const lines = text.split('\n');
+    let html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>
+  body { font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.6; margin: 2cm; color: #222; }
+  h1 { font-size: 20pt; color: #1a1a2e; border-bottom: 2px solid #c8f060; padding-bottom: 6px; }
+  h2 { font-size: 16pt; color: #1a1a2e; margin-top: 20px; }
+  h3 { font-size: 13pt; color: #333; }
+  p { margin: 8px 0; text-align: justify; }
+  .footer { margin-top: 40px; font-size: 10pt; color: #888; text-align: right; border-top: 1px solid #ddd; padding-top: 8px; }
+  .title { font-size: 24pt; font-weight: bold; text-align: center; margin-bottom: 30px; color: #1a1a2e; }
+</style></head><body>`;
+    html += `<div class="title">${title}</div>`;
     for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) {
-        children.push(new Paragraph({ children: [new TextRun('')] }));
-        continue;
-      }
-      if (/^#{1,2}\s/.test(trimmed) || /^\d+\)\s/.test(trimmed) || trimmed.length < 60 && trimmed.endsWith(':')) {
-        const headText = trimmed.replace(/^#{1,2}\s*/, '').replace(/^\d+\)\s*/, '').replace(/:$/, '');
-        children.push(new Paragraph({
-          heading: HeadingLevel.HEADING_1,
-          children: [new TextRun({ text: headText, bold: true, size: 28, font: 'Arial' })]
-        }));
-      } else if (/^###\s/.test(trimmed)) {
-        children.push(new Paragraph({
-          heading: HeadingLevel.HEADING_2,
-          children: [new TextRun({ text: trimmed.replace(/^###\s*/, ''), bold: true, size: 24, font: 'Arial' })]
-        }));
-      } else {
-        children.push(new Paragraph({
-          children: [new TextRun({ text: trimmed, size: 24, font: 'Arial' })],
-          spacing: { after: 120 }
-        }));
-      }
+      const t = line.trim();
+      if (!t) { html += '<br>'; continue; }
+      if (/^###\s/.test(t)) html += `<h3>${t.replace(/^###\s*/,'')}</h3>`;
+      else if (/^##\s/.test(t)) html += `<h2>${t.replace(/^##\s*/,'')}</h2>`;
+      else if (/^#\s/.test(t)) html += `<h1>${t.replace(/^#\s*/,'')}</h1>`;
+      else if (/^\d+\)\s/.test(t) && t.length < 80) html += `<h2>${t.replace(/^\d+\)\s*/,'')}</h2>`;
+      else html += `<p>${t}</p>`;
     }
+    html += `<div class="footer">Generato con StudIA — ${new Date().toLocaleDateString('it-IT')}</div>`;
+    html += '</body></html>';
 
-    // Footer note
-    children.push(new Paragraph({ children: [new TextRun('')] }));
-    children.push(new Paragraph({
-      alignment: AlignmentType.RIGHT,
-      children: [new TextRun({ text: `Generato con StudIA — ${new Date().toLocaleDateString('it-IT')}`, size: 18, color: '888888', italics: true, font: 'Arial' })]
-    }));
-
-    const doc = new Document({
-      styles: {
-        default: { document: { run: { font: 'Arial', size: 24 } } }
-      },
-      sections: [{
-        properties: {
-          page: { size: { width: 11906, height: 16838 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } }
-        },
-        children
-      }]
-    });
-
-    const blob = await Packer.toBlob(doc);
+    const blob = new Blob([html], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${title.replace(/[^a-zA-Z0-9À-ÿ\s]/g,'').substring(0,40).trim()}.docx`;
+    a.download = `${title.replace(/[^a-zA-Z0-9À-ÿ\s]/g,'').substring(0,40).trim()}.doc`;
     a.click();
     URL.revokeObjectURL(url);
   }
