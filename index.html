@@ -394,12 +394,48 @@
 
   @media (max-width: 700px) {
     .app { grid-template-columns: 1fr; }
-    nav { display: none; }
+    nav {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 75%; max-width: 280px;
+      height: 100vh;
+      background: var(--surface);
+      z-index: 1000;
+      padding: 70px 0 20px;
+      box-shadow: 4px 0 24px rgba(0,0,0,0.5);
+      overflow-y: auto;
+    }
+    nav.open { display: block; }
+    .nav-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    }
+    .nav-overlay.open { display: block; }
+    .hamburger {
+      display: flex !important;
+    }
     main { padding: 20px; }
     .grid-2 { grid-template-columns: 1fr; }
-    .features-grid { grid-template-columns: 1fr; }
-    .hero h1 { font-size: 38px; }
+    .features-grid { grid-template-columns: 1fr 1fr; }
+    .hero h1 { font-size: 32px; }
+    .hero { padding: 40px 0 20px; }
   }
+
+  .hamburger {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 8px;
+    line-height: 1;
+  }
+  .hamburger:hover { background: var(--surface2); }
 
   /* FILE UPLOAD */
   .upload-zone {
@@ -609,12 +645,16 @@
   </div>
   <!-- HEADER -->
   <header>
+    <button class="hamburger" onclick="toggleNav()" id="hamburger-btn">☰</button>
     <div class="logo">Stud<span>IA</span></div>
     <div class="header-badge">AI attiva</div>
   </header>
 
+  <!-- Nav overlay for mobile -->
+  <div class="nav-overlay" id="nav-overlay" onclick="closeNav()"></div>
+
   <!-- SIDEBAR -->
-  <nav>
+  <nav id="main-nav">
     <div class="nav-label">Strumenti</div>
     <div class="nav-item active" onclick="showSection('home')">
       <div class="dot" style="background:#c8f060"></div> Home
@@ -1098,6 +1138,18 @@
     const items = document.querySelectorAll('.nav-item');
     const map = { home: 0, riassunto: 1, appunti: 2, podcast: 3, schede: 4, quiz: 5, ricerca: 6, documento: 7 };
     if (map[id] !== undefined) items[map[id]].classList.add('active');
+    closeNav(); // close on mobile after selection
+    window.scrollTo(0, 0);
+  }
+
+  function toggleNav() {
+    document.getElementById('main-nav').classList.toggle('open');
+    document.getElementById('nav-overlay').classList.toggle('open');
+  }
+
+  function closeNav() {
+    document.getElementById('main-nav').classList.remove('open');
+    document.getElementById('nav-overlay').classList.remove('open');
   }
 
   function selectChip(el, group) {
